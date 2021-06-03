@@ -406,7 +406,9 @@ for sttn in sttns.values():
 
 
 import codecs
-with codecs.open('MyStopReport.csv', 'w+b', encoding='UTF-8') as f:
+output_filename = 'data/csv_from_hrdf.csv'
+
+with codecs.open(output_filename, 'w+b', encoding='UTF-8') as f:
     f.write(u'\ufeff')
     # vehicle_types_str = (';{}' * len(vehicle_types)).format(*vehicle_types)
     vehicle_categories_str = (';{}' * len(vm_categories)).format(*vm_categories)
@@ -430,7 +432,7 @@ with codecs.open('MyStopReport.csv', 'w+b', encoding='UTF-8') as f:
         start_end_count_str +
         coords_str + '\n')
 
-with codecs.open('MyStopReport.csv', 'a+b', encoding='UTF-8') as f:
+with codecs.open(output_filename, 'a+b', encoding='UTF-8') as f:
     for station_id in sttns.keys():
         station_str = '{};{}'.format(station_id, sttns[station_id].station_name)
 
