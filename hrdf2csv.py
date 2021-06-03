@@ -302,7 +302,15 @@ def get_journeys():
 
 
 if __name__ == "__main__":
-    hrdf_directory = 'data'
+    properties = {}
+    with open('properties.txt', 'r', encoding="UTF-8") as f:
+        lines = f.readlines()
+    for line in lines:
+        s = line.split('=')
+        properties[s[0].strip()] = s[1].strip()
+
+    hrdf_directory = properties.get('hrdfDirectory')
+    output_filename = properties.get('outputFile')
 
     bahnhof = get_bahnhof(hrdf_directory)
     zugart = get_zugart(hrdf_directory)
@@ -391,7 +399,8 @@ if __name__ == "__main__":
         sttn.mobihub_stop_count = mobihub_stop_count
 
 
-    output_filename = 'csv_from_hrdf.csv'
+
+
 
     with codecs.open(output_filename, 'w+b', encoding='UTF-8') as f:
         f.write(u'\ufeff')

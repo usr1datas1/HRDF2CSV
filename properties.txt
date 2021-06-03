@@ -1,0 +1,2 @@
+hrdfDirectory=<specify your HRFD directory path here>
+outputFile=<specify your output filename here>
