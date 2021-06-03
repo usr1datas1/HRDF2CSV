@@ -1,2 +1,2 @@
-hrdfDirectory=<specify your HRFD directory path here>
-outputFile=<specify your output filename here>
+hrdfDirectory=C:\Users\wnd\PycharmProjects\HRDF2CSV\data
+outputFile=C:\Users\wnd\PycharmProjects\HRDF2CSV\data\csv_from_hrdf.csv
