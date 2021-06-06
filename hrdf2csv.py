@@ -367,15 +367,6 @@ if __name__ == "__main__":
                 vehicle_categories_numbers[vmctgr] = 1
         sttn.set_vehicle_categories_numbers(vehicle_categories_numbers)
 
-        # mobihub_as_start_count = sttn.get_start_count()
-        # mobihub_as_end_count = sttn.get_end_count()
-        # for mbhf_id in sttn.get_metabhf():
-        #     if mbhf_id[0] not in exclude_set:  # EXCLUSION LIST !!!!
-        #         mbhf_sttn = sttns[mbhf_id[0]]
-        #         mobihub_as_start_count += mbhf_sttn.get_start_count()
-        #         mobihub_as_end_count += mbhf_sttn.get_end_count()
-        # sttn.set_mobihub_as_start_count(mobihub_as_start_count)
-        # sttn.set_mobihub_as_end_count(mobihub_as_end_count)
 
         mtbhfs = sttn.get_metabhf()
         if len(mtbhfs) > 0:
@@ -390,14 +381,6 @@ if __name__ == "__main__":
             if sttn.mobihub_id is None:
                 sttn.mobihub_id = sttn.station_id
 
-    for sttn in sttns.values():
-        mobihub_stop_count = sttn.get_stop_count()
-        for station_id, transfer_time in sttn.get_metabhf():
-            try:
-                mobihub_stop_count += sttns[station_id].get_stop_count()
-            except KeyError as e:
-                pass
-        sttn.mobihub_stop_count = mobihub_stop_count
 
     with codecs.open(output_filename, 'w+b', encoding='UTF-8') as f:
         f.write(u'\ufeff')
@@ -409,8 +392,8 @@ if __name__ == "__main__":
         metabhf_count_str = ';{}'.format('metabhf_count')
         metabhf_str = ';{}'.format('metabhf_relations')
         coords_str = ';{};{}'.format('lat', 'long')
-        start_end_count_str = ';{};{}'.format('as_start_count', 'as_end_count')
-        mobihub_str = ';{};{}'.format('mobihub_id', 'mobihub_stop_count')
+        stop_start_end_count_str = ';{};{};{}'.format('stop_count', 'as_start_count', 'as_end_count')
+        mobihub_str = ';{}'.format('mobihub_id')
 
         f.write(
             station_str +
@@ -420,7 +403,7 @@ if __name__ == "__main__":
             metabhf_count_str +
             metabhf_str +
             platforms_count_str +
-            start_end_count_str +
+            stop_start_end_count_str +
             coords_str + '\n')
 
     with codecs.open(output_filename, 'a+b', encoding='UTF-8') as f:
@@ -449,8 +432,10 @@ if __name__ == "__main__":
                 ['-'.join([str(mtb[0]), '-' if mtb[1] is None else '(' + str(int(mtb[1]))]) + 'min)' for mtb in
                  sttns[station_id].get_metabhf()]))
 
-            start_end_count_str = ';{};{}'.format(sttns[station_id].get_start_count(),
-                                                  sttns[station_id].get_end_count())
+            stop_start_end_count_str = ';{};{};{}'.format(
+                sttns[station_id].get_stop_count(),
+                sttns[station_id].get_start_count(),
+                sttns[station_id].get_end_count())
 
             coords_str = ';{};{}'.format(sttns[station_id].get_lat(), sttns[station_id].get_long())
 
@@ -459,7 +444,7 @@ if __name__ == "__main__":
             else:
                 platforms_count_str = ';{}'.format(0)
 
-            mobihub_str = ';{};{}'.format(sttns[station_id].mobihub_id, sttns[station_id].get_mobihub_stop_count())
+            mobihub_str = ';{}'.format(sttns[station_id].mobihub_id)
 
             f.write(
                 station_str +
@@ -469,5 +454,5 @@ if __name__ == "__main__":
                 metabhf_count_str +
                 metabhf_str +
                 platforms_count_str +
-                start_end_count_str +
+                stop_start_end_count_str +
                 coords_str + '\n')
