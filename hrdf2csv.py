@@ -32,7 +32,7 @@ class Station:
     def add_metabhf(self, metabhf):
         self.metabhfs = metabhf
 
-    def get_metabhf(self, consider_none=True, max_transfer_time=15):  # sys.maxsize
+    def get_metabhf(self, consider_none=False, max_transfer_time=15):  # sys.maxsize
         return list(filter(lambda x: consider_none if x[1] is None else int(x[1]) <= max_transfer_time, self.metabhfs))
 
     def get_metabhf_count(self):
@@ -161,9 +161,9 @@ def get_metabhf(hrdf_directory):
             if sttn in result.keys():
                 for i in rel:
                     if i not in list(zip(*result[sttn]))[0]:
-                        result[sttn].append((i, 0))
+                        result[sttn].append((i, None))
             else:
-                result[sttn] = list(zip(rel, [0] * len(rel)))
+                result[sttn] = list(zip(rel, [None] * len(rel)))
 
     return result
 
@@ -385,7 +385,7 @@ if __name__ == "__main__":
     with codecs.open(output_filename, 'w+b', encoding='UTF-8') as f:
         f.write(u'\ufeff')
         vehicle_types_str = (';{}' * len(vehicle_types)).format(*vehicle_types)
-        #vehicle_categories_str = (';{}' * len(vm_categories)).format(*vm_categories)
+        vehicle_categories_str = (';{}' * len(vm_categories)).format(*vm_categories)
 
         station_str = '{};{}'.format('station_id', 'station_name')
         platforms_count_str = ';{}'.format('platforms_count')
@@ -399,7 +399,7 @@ if __name__ == "__main__":
             station_str +
             mobihub_str +
             vehicle_types_str +
-            #vehicle_categories_str +
+            vehicle_categories_str +
             metabhf_count_str +
             metabhf_str +
             platforms_count_str +
@@ -410,12 +410,12 @@ if __name__ == "__main__":
         for station_id in sttns.keys():
             station_str = '{};{}'.format(station_id, sttns[station_id].station_name)
 
-            # ctgrs = [0] * len(vm_categories)
-            # vtnrs = sttns[station_id].vehicle_categories
-            # for vctgr in vtnrs:
-            #     index = list(vm_categories.keys()).index(vctgr)
-            #     ctgrs[index] += vtnrs[vctgr]
-            # vehicle_categories_str = (';{}' * len(vm_categories)).format(*ctgrs)
+            ctgrs = [0] * len(vm_categories)
+            vtnrs = sttns[station_id].vehicle_categories
+            for vctgr in vtnrs:
+                index = list(vm_categories.keys()).index(vctgr)
+                ctgrs[index] += vtnrs[vctgr]
+            vehicle_categories_str = (';{}' * len(vm_categories)).format(*ctgrs)
 
             vts = [0] * len(vehicle_types)
             vtnrs = sttns[station_id].get_vehicle_types_numbers()
@@ -449,8 +449,8 @@ if __name__ == "__main__":
             f.write(
                 station_str +
                 mobihub_str +
-                #vehicle_categories_str +
                 vehicle_types_str +
+                vehicle_categories_str +
                 metabhf_count_str +
                 metabhf_str +
                 platforms_count_str +
