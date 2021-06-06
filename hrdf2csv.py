@@ -2,6 +2,7 @@ import re
 import sys
 import codecs
 
+
 class Station:
     def __init__(self, station_id, station_name):
         self.station_id = station_id
@@ -31,7 +32,7 @@ class Station:
     def add_metabhf(self, metabhf):
         self.metabhfs = metabhf
 
-    def get_metabhf(self, consider_none=True, max_transfer_time=sys.maxsize):  # sys.maxsize
+    def get_metabhf(self, consider_none=True, max_transfer_time=15):  # sys.maxsize
         return list(filter(lambda x: consider_none if x[1] is None else int(x[1]) <= max_transfer_time, self.metabhfs))
 
     def get_metabhf_count(self):
@@ -376,18 +377,18 @@ if __name__ == "__main__":
         # sttn.set_mobihub_as_start_count(mobihub_as_start_count)
         # sttn.set_mobihub_as_end_count(mobihub_as_end_count)
 
-    mtbhfs = sttn.get_metabhf()
-    if len(mtbhfs) > 0:
-        for mtb in list(zip(*mtbhfs))[0]:
-            try:
-                if sttns[mtb].mobihub_id is None:
-                    sttns[mtb].mobihub_id = sttn.station_id
-            except KeyError as e:
-                # print('\t', 'KEY ERROR:', mtb)
-                pass
+        mtbhfs = sttn.get_metabhf()
+        if len(mtbhfs) > 0:
+            for mtb in list(zip(*mtbhfs))[0]:
+                try:
+                    if sttns[mtb].mobihub_id is None:
+                        sttns[mtb].mobihub_id = sttn.station_id
+                except KeyError as e:
+                    # print('\t', 'KEY ERROR:', mtb)
+                    pass
 
-        if sttn.mobihub_id is None:
-            sttn.mobihub_id = sttn.station_id
+            if sttn.mobihub_id is None:
+                sttn.mobihub_id = sttn.station_id
 
     for sttn in sttns.values():
         mobihub_stop_count = sttn.get_stop_count()
@@ -398,14 +399,10 @@ if __name__ == "__main__":
                 pass
         sttn.mobihub_stop_count = mobihub_stop_count
 
-
-
-
-
     with codecs.open(output_filename, 'w+b', encoding='UTF-8') as f:
         f.write(u'\ufeff')
-        # vehicle_types_str = (';{}' * len(vehicle_types)).format(*vehicle_types)
-        vehicle_categories_str = (';{}' * len(vm_categories)).format(*vm_categories)
+        vehicle_types_str = (';{}' * len(vehicle_types)).format(*vehicle_types)
+        #vehicle_categories_str = (';{}' * len(vm_categories)).format(*vm_categories)
 
         station_str = '{};{}'.format('station_id', 'station_name')
         platforms_count_str = ';{}'.format('platforms_count')
@@ -413,13 +410,13 @@ if __name__ == "__main__":
         metabhf_str = ';{}'.format('metabhf_relations')
         coords_str = ';{};{}'.format('lat', 'long')
         start_end_count_str = ';{};{}'.format('as_start_count', 'as_end_count')
-        mobihub_str = ';{}'.format('mobihub_id')
+        mobihub_str = ';{};{}'.format('mobihub_id', 'mobihub_stop_count')
 
         f.write(
             station_str +
             mobihub_str +
-            # vehicle_types_str +
-            vehicle_categories_str +
+            vehicle_types_str +
+            #vehicle_categories_str +
             metabhf_count_str +
             metabhf_str +
             platforms_count_str +
@@ -430,12 +427,21 @@ if __name__ == "__main__":
         for station_id in sttns.keys():
             station_str = '{};{}'.format(station_id, sttns[station_id].station_name)
 
-            ctgrs = [0] * len(vm_categories)
-            vtnrs = sttns[station_id].vehicle_categories
-            for vctgr in vtnrs:
-                index = list(vm_categories.keys()).index(vctgr)
-                ctgrs[index] += vtnrs[vctgr]
-            vehicle_categories_str = (';{}' * len(vm_categories)).format(*ctgrs)
+            # ctgrs = [0] * len(vm_categories)
+            # vtnrs = sttns[station_id].vehicle_categories
+            # for vctgr in vtnrs:
+            #     index = list(vm_categories.keys()).index(vctgr)
+            #     ctgrs[index] += vtnrs[vctgr]
+            # vehicle_categories_str = (';{}' * len(vm_categories)).format(*ctgrs)
+
+            vts = [0] * len(vehicle_types)
+            vtnrs = sttns[station_id].get_vehicle_types_numbers()
+            for i, vt in enumerate(vehicle_types):
+                if vt in vtnrs.keys():
+                    vts[i] = vtnrs[vt]
+                else:
+                    vts[i] = 0
+            vehicle_types_str = (';{}' * len(vehicle_types)).format(*vts)
 
             metabhf_count_str = ';{}'.format(len(sttns[station_id].get_metabhf()))
 
@@ -453,12 +459,13 @@ if __name__ == "__main__":
             else:
                 platforms_count_str = ';{}'.format(0)
 
-            mobihub_str = ';{}'.format(sttns[station_id].mobihub_id)
+            mobihub_str = ';{};{}'.format(sttns[station_id].mobihub_id, sttns[station_id].get_mobihub_stop_count())
 
             f.write(
                 station_str +
                 mobihub_str +
-                vehicle_categories_str +
+                #vehicle_categories_str +
+                vehicle_types_str +
                 metabhf_count_str +
                 metabhf_str +
                 platforms_count_str +
