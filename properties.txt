@@ -1,2 +1,0 @@
-hrdfDirectory=C:\Users\wnd\PycharmProjects\HRDF2CSV\data
-outputFile=C:\Users\wnd\PycharmProjects\HRDF2CSV\data\csv_from_hrdf.csv
