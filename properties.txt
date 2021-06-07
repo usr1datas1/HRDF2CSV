@@ -1,2 +1,4 @@
 hrdfDirectory=C:\Users\wnd\PycharmProjects\HRDF2CSV\data
-outputFile=C:\Users\wnd\PycharmProjects\HRDF2CSV\data\csv_from_hrdf.csv
+osmDirectory=C:\Users\wnd\PycharmProjects\HRDF2CSV\data
+outputFileFromHRDF=C:\Users\wnd\PycharmProjects\HRDF2CSV\data\csv_from_hrdf.csv
+outputFileFromOSM=C:\Users\wnd\PycharmProjects\HRDF2CSV\data\csv_from_osm.csv
