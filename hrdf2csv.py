@@ -412,7 +412,7 @@ if __name__ == "__main__":
                     max_metabhf_count = sttns[bhf].get_metabhf_count()
             except KeyError as e:
                 pass
-        print(mobihub_id, max_metabhf_count)
+
         for bhf in pool:
             try:
                 sttns[bhf].mobihub_id = mobihub_id
