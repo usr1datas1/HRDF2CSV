@@ -311,7 +311,7 @@ if __name__ == "__main__":
         properties[s[0].strip()] = s[1].strip()
 
     hrdf_directory = properties.get('hrdfDirectory')
-    output_filename = properties.get('outputFile')
+    output_filename = properties.get('outputFileFromHRDF')
 
     bahnhof = get_bahnhof(hrdf_directory)
     zugart = get_zugart(hrdf_directory)
@@ -368,18 +368,56 @@ if __name__ == "__main__":
         sttn.set_vehicle_categories_numbers(vehicle_categories_numbers)
 
 
-        mtbhfs = sttn.get_metabhf()
-        if len(mtbhfs) > 0:
-            for mtb in list(zip(*mtbhfs))[0]:
-                try:
-                    if sttns[mtb].mobihub_id is None:
-                        sttns[mtb].mobihub_id = sttn.station_id
-                except KeyError as e:
-                    # print('\t', 'KEY ERROR:', mtb)
-                    pass
+        # mtbhfs = sttn.get_metabhf()
+        # if len(mtbhfs) > 0:
+        #     for mtb in list(zip(*mtbhfs))[0]:
+        #         try:
+        #             if sttns[mtb].mobihub_id is None:
+        #                 sttns[mtb].mobihub_id = sttn.station_id
+        #         except KeyError as e:
+        #             # print('\t', 'KEY ERROR:', mtb)
+        #             pass
+        #
+        #     if sttn.mobihub_id is None:
+        #         sttn.mobihub_id = sttn.station_id
 
-            if sttn.mobihub_id is None:
-                sttn.mobihub_id = sttn.station_id
+    mbh_pools = []
+    for sttn in sttns.values():
+        if sttn.get_metabhf_count() > 0:
+            index = None
+            pool = set()
+            for p in mbh_pools:
+                if sttn.station_id in p:
+                    pool = p
+                    index = mbh_pools.index(p)
+                    break
+                else:
+                    pool = set()
+
+            pool.add(sttn.station_id)
+
+            for m, t in sttn.get_metabhf():
+                pool.add(m)
+
+            if index is None:
+                mbh_pools.append(pool)
+
+    for pool in mbh_pools:
+        mobihub_id = None
+        max_metabhf_count = 0
+        for bhf in pool:
+            try:
+                if sttns[bhf].get_metabhf_count() > max_metabhf_count:
+                    mobihub_id = bhf
+                    max_metabhf_count = sttns[bhf].get_metabhf_count()
+            except KeyError as e:
+                pass
+        print(mobihub_id, max_metabhf_count)
+        for bhf in pool:
+            try:
+                sttns[bhf].mobihub_id = mobihub_id
+            except KeyError as e:
+                pass
 
 
     with codecs.open(output_filename, 'w+b', encoding='UTF-8') as f:
