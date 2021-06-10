@@ -191,14 +191,11 @@ def get_metabhf(hrdf_directory):
                     rel_lat, rel_lon = float(bfkoord[station_id][0]), float(bfkoord[station_id][1])
                     dist = get_distance(k_lat, k_lon, rel_lat, rel_lon)
                     if dist <= 50: # Luftlienie von <x>-Meter zwischen den Haltestellen
-                        # print(metabhf[k])
                         result[k][i] = (station_id, 0)
-                        # print('+', metabhf[k][i], dist)
                     else:
-                        # print('-', metabhf[k][i], dist)
                         pass
-        except KeyError as e:
-            #print('>>> ERROR: {}'.format(k))
+
+        except KeyError:
             pass
 
     # --------------------------------------
