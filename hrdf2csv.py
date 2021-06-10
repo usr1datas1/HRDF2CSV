@@ -1,4 +1,5 @@
 import re
+import math
 import sys
 import codecs
 
@@ -8,6 +9,7 @@ class Station:
         self.station_id = station_id
         self.station_name = station_name
         self.metabhfs = []  # list of (related station_id, transfer_time in minutes)
+        self.mobihub_metabhf_count = 0
         self.mobihub_stop_count = 0
         self.journeys = []
         self.coordinates = (None, None, None)
@@ -37,6 +39,7 @@ class Station:
 
     def get_metabhf_count(self):
         return len(self.get_metabhf())
+        #return self.metabhf_count
 
     def add_journey(self, journey):
         self.journeys.append(journey)
@@ -127,6 +130,17 @@ def get_bahnhof(hrdf_directory):
             result[nummer] = name
     return result
 
+def get_distance(lat1, lon1, lat2, lon2):
+    R = 6371e3  # metres
+    φ1 = lat1 * math.pi / 180  # φ, λ in radians
+    φ2 = lat2 * math.pi / 180
+    Δφ = (lat2 - lat1) * math.pi / 180
+    Δλ = (lon2 - lon1) * math.pi / 180
+
+    a = math.sin(Δφ / 2) * math.sin(Δφ / 2) + math.cos(φ1) * math.cos(φ2) * math.sin(Δλ / 2) * math.sin(Δλ / 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    d = R * c  # in metres
+    return d
 
 def get_metabhf(hrdf_directory):
     s = re.compile(r'^\*A\s')
@@ -165,6 +179,29 @@ def get_metabhf(hrdf_directory):
             else:
                 result[sttn] = list(zip(rel, [None] * len(rel)))
 
+    # --------------------------------------
+
+    bfkoord = get_bfkoord(hrdf_directory)
+    for k in filter(lambda x: int(x) >= 8500000 and int(x) <= 8599999, result.keys()):
+        try:
+            k_lat, k_lon = float(bfkoord[k][0]), float(bfkoord[k][1])
+            for i, rel in enumerate(result[k]):
+                station_id, time = rel
+                if time is None:
+                    rel_lat, rel_lon = float(bfkoord[station_id][0]), float(bfkoord[station_id][1])
+                    dist = get_distance(k_lat, k_lon, rel_lat, rel_lon)
+                    if dist <= 50: # Luftlienie von <x>-Meter zwischen den Haltestellen
+                        # print(metabhf[k])
+                        result[k][i] = (station_id, 0)
+                        # print('+', metabhf[k][i], dist)
+                    else:
+                        # print('-', metabhf[k][i], dist)
+                        pass
+        except KeyError as e:
+            #print('>>> ERROR: {}'.format(k))
+            pass
+
+    # --------------------------------------
     return result
 
 
@@ -381,43 +418,106 @@ if __name__ == "__main__":
         #     if sttn.mobihub_id is None:
         #         sttn.mobihub_id = sttn.station_id
 
+    # mbh_pools = []
+    # for sttn in sttns.values():
+    #     if sttn.get_metabhf_count() > 0:
+    #         index = None
+    #         pool = set()
+    #         for p in mbh_pools:
+    #             if sttn.station_id in p:
+    #                 pool = p
+    #                 index = mbh_pools.index(p)
+    #                 continue
+    #             else:
+    #                 pool = set()
+    #
+    #         pool.add(sttn.station_id)
+    #
+    #         for m, t in sttn.get_metabhf():
+    #             pool.add(m)
+    #
+    #         if index is None:
+    #             mbh_pools.append(pool)
+
+    cx = 0
+    seen = set()
     mbh_pools = []
     for sttn in sttns.values():
         if sttn.get_metabhf_count() > 0:
-            index = None
-            pool = set()
-            for p in mbh_pools:
-                if sttn.station_id in p:
-                    pool = p
-                    index = mbh_pools.index(p)
-                    break
-                else:
+            cx += 1
+            if sttn.station_id not in seen:
+                index = None
+                pool = None
+                for i, p in enumerate(mbh_pools):
+                    if sttn.station_id in p:
+                        index = i
+                        pool = p
+                        print(sttn.station_id, '>', index)
+                        break
+
+                if index is None:
                     pool = set()
 
-            pool.add(sttn.station_id)
-
-            for m, t in sttn.get_metabhf():
-                pool.add(m)
-
-            if index is None:
+                pool.add(sttn.station_id)
+                seen.add(sttn.station_id)
+                for rel, time in sttn.get_metabhf():
+                    if rel not in seen:
+                        seen.add(rel)
+                        pool.add(rel)
                 mbh_pools.append(pool)
 
+
+    # for pool in mbh_pools:
+    #     mobihub_id = None
+    #     max_platforms_count = 0
+    #     for bhf in pool:
+    #         try:
+    #             # if sttns[bhf].get_metabhf_count() > max_metabhf_count:
+    #             #     mobihub_id = bhf
+    #             #     max_metabhf_count = sttns[bhf].get_metabhf_count()
+    #             if sttns[bhf].get_platforms_count() > max_platforms_count:
+    #                 mobihub_id = bhf
+    #                 max_platforms_count = sttns[bhf].get_platforms_count()
+    #
+    #         except KeyError as e:
+    #             pass
+    #
+    #     for bhf in pool:
+    #         try:
+    #             sttns[bhf].mobihub_id = mobihub_id
+    #             sttns[bhf].mobihub_metabhf_count = len(pool)
+    #         except KeyError as e:
+    #             pass
+
+    cx = 0
+    wrong_meta_relations = set()
     for pool in mbh_pools:
         mobihub_id = None
-        max_metabhf_count = 0
+        max_stop_count = 0
         for bhf in pool:
             try:
-                if sttns[bhf].get_metabhf_count() > max_metabhf_count:
-                    mobihub_id = bhf
-                    max_metabhf_count = sttns[bhf].get_metabhf_count()
-            except KeyError as e:
+                if sttns[bhf].get_stop_count() > max_stop_count:
+                    max_stop_count = sttns[bhf].get_stop_count()
+                    mobihub_id = sttns[bhf].station_id
+            except KeyError:
+                wrong_meta_relations.add(bhf)
                 pass
 
         for bhf in pool:
             try:
                 sttns[bhf].mobihub_id = mobihub_id
+                sttns[bhf].mobihub_metabhf_count = len(pool)
+                cx += 1
             except KeyError as e:
                 pass
+
+    for pool in mbh_pools:
+        for w in wrong_meta_relations:
+            if w in pool:
+                pool.remove(w)
+
+    print('CX={}'.format(cx))
+
 
 
     with codecs.open(output_filename, 'w+b', encoding='UTF-8') as f:
@@ -427,7 +527,7 @@ if __name__ == "__main__":
 
         station_str = '{};{}'.format('station_id', 'station_name')
         platforms_count_str = ';{}'.format('platforms_count')
-        metabhf_count_str = ';{}'.format('metabhf_count')
+        metabhf_count_str = ';{};{}'.format('metabhf_count', 'mobihub_metabhf_count')
         metabhf_str = ';{}'.format('metabhf_relations')
         coords_str = ';{};{}'.format('lat', 'long')
         stop_start_end_count_str = ';{};{};{}'.format('stop_count', 'as_start_count', 'as_end_count')
@@ -464,7 +564,7 @@ if __name__ == "__main__":
                     vts[i] = 0
             vehicle_types_str = (';{}' * len(vehicle_types)).format(*vts)
 
-            metabhf_count_str = ';{}'.format(len(sttns[station_id].get_metabhf()))
+            metabhf_count_str = ';{};{}'.format(len(sttns[station_id].get_metabhf()), sttns[station_id].mobihub_metabhf_count)
 
             metabhf_str = ';{}'.format(' '.join(
                 ['-'.join([str(mtb[0]), '-' if mtb[1] is None else '(' + str(int(mtb[1]))]) + 'min)' for mtb in
